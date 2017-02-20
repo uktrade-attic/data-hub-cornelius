@@ -58,9 +58,11 @@ node_modules/
 # virtual environments
 .env
 
+# Scrapy
+.scrapy
+
 # User-uploaded media
 cornelius/media/
-
 
 
 staticfiles/
