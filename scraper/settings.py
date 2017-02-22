@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 # Scrapy settings for scraper project
 #
 # For simplicity, this file contains only settings considered important or
@@ -14,8 +16,8 @@ BOT_NAME = 'scraper'
 SPIDER_MODULES = ['scraper.spiders']
 NEWSPIDER_MODULE = 'scraper.spiders'
 
-START_URLS = ["http://services.odata.org/Experimental/Northwind/Northwind.svc/"]
-ALLOWED_DOMAINS = ["services.odata.org"]
+START_URLS = ["https://ukti.cdms.ukti.gov.uk/XRMServices/2011/OrganizationData.svc"]
+ALLOWED_DOMAINS = ["ukti.cdms.ukti.gov.uk"]
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -93,4 +95,10 @@ HTTPCACHE_IGNORE_HTTP_CODES = []
 HTTPCACHE_STORAGE = 'scraper.storage.S3CacheStorage'
 HTTPCACHE_GZIP = False
 COMPRESSION_ENABLED = False
-S3CACHE_BUCKET = 'singletoned.com.scrapy'
+
+S3CACHE_BUCKET = 'stage-datahub-scrape'
+
+CDMS_BASE_URL = os.environ['CDMS_BASE_URL']
+CDMS_ADFS_URL = os.environ['CDMS_ADFS_URL']
+CDMS_USERNAME = os.environ['CDMS_USERNAME']
+CDMS_PASSWORD = os.environ['CDMS_PASSWORD']
