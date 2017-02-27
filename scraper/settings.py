@@ -90,3 +90,7 @@ CDMS_BASE_URL = os.environ['CDMS_BASE_URL']
 CDMS_ADFS_URL = os.environ['CDMS_ADFS_URL']
 CDMS_USERNAME = os.environ['CDMS_USERNAME']
 CDMS_PASSWORD = os.environ['CDMS_PASSWORD']
+
+FEED_FORMAT = 'jsonlines'
+__here__ = os.path.dirname(__file__)
+FEED_URI = "s3://stage-datahub-scrape/output.jsonlines"
