@@ -16,7 +16,7 @@ BOT_NAME = 'scraper'
 SPIDER_MODULES = ['scraper.spiders']
 NEWSPIDER_MODULE = 'scraper.spiders'
 
-START_URLS = ["https://ukti.cdms.ukti.gov.uk/XRMServices/2011/OrganizationData.svc"]
+START_URLS = ["https://ukti.cdms.ukti.gov.uk/XRMServices/2011/OrganizationData.svc/"]
 ALLOWED_DOMAINS = ["ukti.cdms.ukti.gov.uk"]
 
 
