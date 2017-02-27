@@ -26,7 +26,8 @@ def __init__(self, login_url, username, password):
     self.password = password
     self.session = self.login()
 
-def login(url, username, password):
+
+def login(url, username, password, user_agent=None):
     """
     This goes through the following steps:
 
@@ -42,7 +43,8 @@ def login(url, username, password):
     https://msdn.microsoft.com/en-us/library/aa480563.aspx
     """
     session = requests.session()
-
+    if user_agent:
+        session.headers.update({'User-Agent': user_agent})
     # 1. get login page
     # url = '{}/?whr={}'.format(CDMS_BASE_URL, CDMS_ADFS_URL)
     resp = session.get(url)
