@@ -21,7 +21,7 @@ ALLOWED_DOMAINS = ["ukti.cdms.ukti.gov.uk"]
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'scraper (+http://www.yourdomain.com)'
+USER_AGENT = 'scraper'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
