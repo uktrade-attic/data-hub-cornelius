@@ -3,6 +3,7 @@
 import io
 import pickle
 from time import time
+import functools
 
 from w3lib.http import headers_raw_to_dict, headers_dict_to_raw
 
@@ -13,25 +14,33 @@ from scrapy.utils.request import request_fingerprint
 import boto3
 import botocore
 
-def get_s3_text(bucket, fingerprint, f_type):
+cache_key_prefix = "CACHE"
+
+
+def listify(*args):
+    """
+    >>> l = [1, 2, 3, ]
+    >>> listify('a', 'b', *l)
+    ['a', 'b', 1, 2, 3]
+    """
+    return list(args)
+
+
+def get_s3_text(bucket, key):
     body = io.BytesIO()
-    key = "/".join([fingerprint, f_type])
     bucket.download_fileobj(key, body)
     body.seek(0)
     text = body.read()
     return text
 
-def send_s3_text(bucket, fingerprint, f_type, body):
+def send_s3_text(bucket, key, body):
     body = io.BytesIO(body)
-    key = "/".join([fingerprint, f_type])
     bucket.upload_fileobj(body, key)
     body.close()
 
 
 class S3CacheStorage(object):
     def __init__(self, settings):
-        self.aws_access_key = settings['AWS_ACCESS_KEY_ID']
-        self.aws_secret_key = settings['AWS_SECRET_ACCESS_KEY']
         self.bucket_name = settings['S3CACHE_BUCKET']
         assert self.bucket_name, "No bucket configured"
         s3 = boto3.resource('s3')
@@ -44,11 +53,11 @@ class S3CacheStorage(object):
         pass
 
     def retrieve_response(self, spider, request):
-        fingerprint = request_fingerprint(request)
+        path = functools.partial(storage_path, request)
         try:
-            _metadata = get_s3_text(self.bucket, fingerprint, 'pickled_meta')
-            body = get_s3_text(self.bucket, fingerprint, 'response_body')
-            rawheaders = get_s3_text(self.bucket, fingerprint, 'response_headers')
+            _metadata = get_s3_text(self.bucket, path('pickled_meta'))
+            body = get_s3_text(self.bucket, path('response_body'))
+            rawheaders = get_s3_text(self.bucket, path('response_headers'))
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == "404":
                 return None
@@ -65,7 +74,7 @@ class S3CacheStorage(object):
         return response
 
     def store_response(self, spider, request, response):
-        fingerprint = request_fingerprint(request)
+        path = functools.partial(storage_path, request)
         metadata = {
             'url': request.url,
             'method': request.method,
@@ -83,4 +92,14 @@ class S3CacheStorage(object):
             ('response_body', response.body),
         )
         for key, body in pairs:
-            send_s3_text(self.bucket, fingerprint, key, body)
+            send_s3_text(self.bucket, path(key), body)
+
+def storage_path(request, *args):
+    fingerprint = request_fingerprint(request)
+    path = "/".join(listify(cache_key_prefix, get_path(request.url), fingerprint, *args))
+    return path
+
+def get_path(url):
+    without_protocol = url.split("//", 1)[-1]
+    without_domain = without_protocol.split("/", 1)[-1]
+    return without_domain
