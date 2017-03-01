@@ -29,13 +29,19 @@ class OdataSpider(scrapy.Spider):
             req = scrapy.Request(
                 url,
                 cookies=cookies,
-                callback=self.parse)
+                callback=self.parse_homepage)
             yield req
 
-    def parse(self, response):
+    def parse_homepage(self, response):
         if response.url.strip("/").endswith(".svc"):
             data = json.loads(response.body)
             yield data
-            # items = data['value']
-            # for item in items:
-            #     yield scrapy.Request(response.urljoin(item['url']))
+            items = data['d']['EntitySets']
+            for item in items:
+                yield scrapy.Request(
+                    response.urljoin(item),
+                    callback=self.parse_itempage)
+
+    def parse_itempage(self, response):
+        data = json.loads(response.body)
+        yield data
