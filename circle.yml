@@ -11,6 +11,6 @@ dependencies:
 
 test:
   override:
-    - nonsetests --with-coverage
+    - nosetests --with-coverage
     - flake8
     - codecov
