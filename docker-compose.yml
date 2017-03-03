@@ -1,0 +1,15 @@
+version: '2'
+services:
+
+  scraper:
+    build:
+      context: .
+      dockerfile: docker/scraper/Dockerfile
+    environment:
+      - CDMS_USERNAME
+      - CDMS_PASSWORD
+      - CDMS_ADFS_URL
+      - CDMS_BASE_URL
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+    command: /app/start.sh
