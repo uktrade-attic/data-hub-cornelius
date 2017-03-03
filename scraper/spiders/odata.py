@@ -34,7 +34,7 @@ class OdataSpider(scrapy.Spider):
 
     def parse_homepage(self, response):
         if response.url.strip("/").endswith(".svc"):
-            data = json.loads(response.body)
+            data = json.loads(response.body.decode('utf8'))
             yield data
             items = data['d']['EntitySets']
             for item in items:
@@ -43,5 +43,5 @@ class OdataSpider(scrapy.Spider):
                     callback=self.parse_itempage)
 
     def parse_itempage(self, response):
-        data = json.loads(response.body)
+        data = json.loads(response.body.decode('utf8'))
         yield data
