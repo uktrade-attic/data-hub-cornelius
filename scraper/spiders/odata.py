@@ -21,6 +21,11 @@ def get_cookies():
     cookies = session.cookies.get_dict()
     return cookies
 
+def retry(response):
+    cookies = get_cookies()
+    request = response.request.copy()
+    request.cookies = cookies
+    return request
 
 class OdataSpider(scrapy.Spider):
     name = "odata"
@@ -47,6 +52,8 @@ class OdataSpider(scrapy.Spider):
                     callback=self.parse_itempage)
 
     def parse_itempage(self, response):
+        if response.status == 302:
+            yield retry(response)
         data = json.loads(response.body.decode('utf8'))
         # yield data
         if '__next' in data['d']:
