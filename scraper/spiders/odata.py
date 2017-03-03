@@ -6,6 +6,21 @@ import scrapy
 from scraper import settings, auth
 
 
+def get_cookies():
+    login_url = '{}/?whr={}'.format(
+        settings.CDMS_BASE_URL,
+        settings.CDMS_ADFS_URL)
+    session = auth.login(
+        login_url,
+        settings.CDMS_USERNAME,
+        settings.CDMS_PASSWORD,
+        user_agent=settings.USER_AGENT)
+    for domain in session.cookies.list_domains():
+        if not domain == ".cdms.ukti.gov.uk":
+            session.cookies.clear(domain)
+    cookies = session.cookies.get_dict()
+    return cookies
+
 
 class OdataSpider(scrapy.Spider):
     name = "odata"
@@ -13,18 +28,7 @@ class OdataSpider(scrapy.Spider):
     start_urls = settings.START_URLS
 
     def start_requests(self):
-        login_url = '{}/?whr={}'.format(
-            settings.CDMS_BASE_URL,
-            settings.CDMS_ADFS_URL)
-        session = auth.login(
-            login_url,
-            settings.CDMS_USERNAME,
-            settings.CDMS_PASSWORD,
-            user_agent=settings.USER_AGENT)
-        for domain in session.cookies.list_domains():
-            if not domain == ".cdms.ukti.gov.uk":
-                session.cookies.clear(domain)
-        cookies = session.cookies.get_dict()
+        cookies = get_cookies()
         for url in settings.START_URLS:
             req = scrapy.Request(
                 url,
