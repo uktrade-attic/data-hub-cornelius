@@ -1,0 +1,10 @@
+pep8
+flake8
+flake8-blind-except
+flake8-debugger
+flake8-import-order
+flake8-docstrings
+flake8-print
+flake8-quotes
+flake8-string-format
+pep8-naming

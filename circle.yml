@@ -1,0 +1,16 @@
+machine:
+  python:
+    version: 3.6.0
+
+dependencies:
+  pre:
+    - pip install -r requirements/tests.txt
+    - pip install -r requirements/scraper.txt
+    - pip install -r requirements/flake8.txt
+    - pip install codecov
+
+test:
+  override:
+    - nonsetests --with-coverage
+    - flake8
+    - codecov
