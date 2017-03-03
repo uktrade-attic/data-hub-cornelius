@@ -45,3 +45,7 @@ class OdataSpider(scrapy.Spider):
     def parse_itempage(self, response):
         data = json.loads(response.body.decode('utf8'))
         yield data
+        if '__next' in data['d']:
+            yield scrapy.Request(
+                data['d']['__next'],
+                callback=self.parse_itempage)
