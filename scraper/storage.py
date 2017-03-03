@@ -97,6 +97,7 @@ class S3CacheStorage(object):
 def storage_path(request, *args):
     fingerprint = request_fingerprint(request)
     path = "/".join(listify(cache_key_prefix, get_path(request.url), fingerprint, *args))
+    path = path.replace("//", "/")
     return path
 
 def get_path(url):
