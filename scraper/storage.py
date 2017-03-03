@@ -16,6 +16,17 @@ import botocore
 
 cache_key_prefix = "CACHE"
 
+filenames = [
+    'meta',
+    'pickled_meta',
+    'request_headers',
+    'request_body',
+    'response_headers',
+    'response_body']
+
+def make_delete_objects(path_func):
+    return {'Objects': [{'Key': path_func(k)} for k in filenames]}
+
 
 def listify(*args):
     """
@@ -71,9 +82,14 @@ class S3CacheStorage(object):
         headers = Headers(headers_raw_to_dict(rawheaders))
         respcls = responsetypes.from_args(headers=headers, url=url)
         response = respcls(url=url, headers=headers, status=status, body=body)
+        if response.status == 302:
+            self.bucket.delete_objects(Delete=make_delete_objects(path))
+            return None
         return response
 
     def store_response(self, spider, request, response):
+        if response.status == 302:
+            return
         path = functools.partial(storage_path, request)
         metadata = {
             'url': request.url,
