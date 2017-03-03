@@ -35,7 +35,7 @@ class OdataSpider(scrapy.Spider):
     def parse_homepage(self, response):
         if response.url.strip("/").endswith(".svc"):
             data = json.loads(response.body.decode('utf8'))
-            yield data
+            # yield data
             items = data['d']['EntitySets']
             for item in items:
                 yield scrapy.Request(
@@ -44,7 +44,7 @@ class OdataSpider(scrapy.Spider):
 
     def parse_itempage(self, response):
         data = json.loads(response.body.decode('utf8'))
-        yield data
+        # yield data
         if '__next' in data['d']:
             yield scrapy.Request(
                 data['d']['__next'],
