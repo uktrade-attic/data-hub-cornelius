@@ -54,7 +54,9 @@ class S3CacheStorage(object):
     def __init__(self, settings):
         self.bucket_name = settings['S3CACHE_BUCKET']
         assert self.bucket_name, "No bucket configured"
-        s3 = boto3.resource('s3')
+        self.region = settings['AWS_REGION']
+        assert self.region, "No AWS region configured"
+        s3 = boto3.resource('s3', region_name=self.region)
         self.bucket = s3.Bucket(self.bucket_name)
 
     def open_spider(self, spider):
