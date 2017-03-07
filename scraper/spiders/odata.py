@@ -5,6 +5,8 @@ import scrapy
 
 from scraper import settings, auth
 
+from redis import StrictRedis
+
 
 def get_cookies():
     login_url = '{}/?whr={}'.format(
@@ -32,8 +34,23 @@ class OdataSpider(scrapy.Spider):
     allowed_domains = settings.ALLOWED_DOMAINS
     start_urls = settings.START_URLS
 
+    def _previous_urls(self):
+        return self.cache.sscan("urls")
+
+    def __init__(self, *args, **kwargs):
+        super(OdataSpider, self).__init__(*args, **kwargs)
+        self.cache = StrictRedis(
+            settings.REDIS_HOST,
+            settings.REDIS_PORT,
+            settings.REDIS_DB)
+
     def start_requests(self):
         cookies = get_cookies()
+        for url in self._previous_urls():
+            req = scrapy.Request(
+                url,
+                cookies=cookies,
+                callback=self.parse_homepage)
         for url in settings.START_URLS:
             req = scrapy.Request(
                 url,
@@ -54,9 +71,13 @@ class OdataSpider(scrapy.Spider):
     def parse_itempage(self, response):
         if response.status == 302:
             yield retry(response)
+        elif response.status == 200:
+            self.cache.srem("urls", self.response.url)
         data = json.loads(response.body.decode('utf8'))
         # yield data
         if '__next' in data['d']:
+            url = data['d']['__next']
+            self.cache.sadd("urls", url)
             yield scrapy.Request(
-                data['d']['__next'],
+                url,
                 callback=self.parse_itempage)
