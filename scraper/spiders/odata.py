@@ -47,16 +47,15 @@ class OdataSpider(scrapy.Spider):
     def start_requests(self):
         cookies = get_cookies()
         for url in self._previous_urls():
-            req = scrapy.Request(
+            yield scrapy.Request(
                 url,
                 cookies=cookies,
                 callback=self.parse_homepage)
         for url in settings.START_URLS:
-            req = scrapy.Request(
+            yield scrapy.Request(
                 url,
                 cookies=cookies,
                 callback=self.parse_homepage)
-            yield req
 
     def parse_homepage(self, response):
         if response.url.strip("/").endswith(".svc"):
