@@ -40,9 +40,9 @@ class OdataSpider(scrapy.Spider):
     def __init__(self, *args, **kwargs):
         super(OdataSpider, self).__init__(*args, **kwargs)
         self.cache = StrictRedis(
-            settings.REDIS_HOST,
-            settings.REDIS_PORT,
-            settings.REDIS_DB)
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            db=settings.REDIS_DB)
 
     def start_requests(self):
         cookies = get_cookies()
