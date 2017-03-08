@@ -29,6 +29,7 @@ def retry(response):
     request.cookies = cookies
     return request
 
+
 class OdataSpider(scrapy.Spider):
     name = "odata"
     allowed_domains = settings.ALLOWED_DOMAINS
