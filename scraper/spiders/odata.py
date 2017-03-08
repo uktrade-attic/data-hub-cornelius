@@ -72,7 +72,7 @@ class OdataSpider(scrapy.Spider):
         if response.status == 302:
             yield retry(response)
         elif response.status == 200:
-            self.cache.srem("urls", self.response.url)
+            self.cache.srem("urls", response.url)
         data = json.loads(response.body.decode('utf8'))
         # yield data
         if '__next' in data['d']:
