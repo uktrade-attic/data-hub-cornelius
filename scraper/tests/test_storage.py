@@ -20,6 +20,7 @@ mock_data = {
 mock_settings = {
     'AWS_ACCESS_KEY_ID': "flibble",
     'AWS_SECRET_ACCESS_KEY': "fl00bl3",
+    'AWS_REGION': "eu-north-5",
     'S3CACHE_BUCKET': "example.com_flibble"}
 
 def mock_get_s3_text(bucket, fingerprint):
