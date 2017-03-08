@@ -20,13 +20,6 @@ def dictify(*args, **kwargs):
     return result
 
 
-def __init__(self, login_url, username, password):
-    self.login_url = login_url
-    self.username = username
-    self.password = password
-    self.session = self.login()
-
-
 def login(url, username, password, user_agent=None):
     """
     This goes through the following steps:
