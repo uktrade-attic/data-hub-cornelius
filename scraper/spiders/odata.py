@@ -35,7 +35,7 @@ class OdataSpider(scrapy.Spider):
     start_urls = settings.START_URLS
 
     def _previous_urls(self):
-        return self.cache.sscan("urls")
+        return self.cache.sscan_iter("urls")
 
     def __init__(self, *args, **kwargs):
         super(OdataSpider, self).__init__(*args, **kwargs)
