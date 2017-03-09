@@ -49,7 +49,7 @@ class OdataSpider(scrapy.Spider):
         cookies = get_cookies()
         for url in self._previous_urls():
             yield scrapy.Request(
-                url,
+                url.decode('utf8'),
                 cookies=cookies,
                 callback=self.parse_homepage)
         for url in settings.START_URLS:
