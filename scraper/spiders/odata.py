@@ -9,7 +9,7 @@ from redis import StrictRedis
 
 
 def get_cookies():
-    login_url = '{}/?whr={}'.format(
+    login_url = "{}/?whr={}".format(
         settings.CDMS_BASE_URL,
         settings.CDMS_ADFS_URL)
     session = auth.login(
@@ -31,12 +31,12 @@ def retry(response):
 
 
 class OdataSpider(scrapy.Spider):
-    name = "odata"
+    name = 'odata'
     allowed_domains = settings.ALLOWED_DOMAINS
     start_urls = settings.START_URLS
 
     def _previous_urls(self):
-        return self.cache.sscan_iter("urls")
+        return self.cache.sscan_iter('urls')
 
     def __init__(self, *args, **kwargs):
         super(OdataSpider, self).__init__(*args, **kwargs)
@@ -49,7 +49,7 @@ class OdataSpider(scrapy.Spider):
         cookies = get_cookies()
         for url in self._previous_urls():
             yield scrapy.Request(
-                url.decode('utf8'),
+                url.decode("utf-8"),
                 cookies=cookies,
                 callback=self.parse_homepage)
         for url in settings.START_URLS:
@@ -60,7 +60,7 @@ class OdataSpider(scrapy.Spider):
 
     def parse_homepage(self, response):
         if response.url.strip("/").endswith(".svc"):
-            data = json.loads(response.body.decode('utf8'))
+            data = json.loads(response.body.decode("utf-8"))
             # yield data
             items = data['d']['EntitySets']
             for item in items:
@@ -72,12 +72,12 @@ class OdataSpider(scrapy.Spider):
         if response.status == 302:
             yield retry(response)
         elif response.status == 200:
-            self.cache.srem("urls", response.url)
-        data = json.loads(response.body.decode('utf8'))
+            self.cache.srem('urls', response.url)
+        data = json.loads(response.body.decode("utf-8"))
         # yield data
         if '__next' in data['d']:
             url = data['d']['__next']
-            self.cache.sadd("urls", url)
+            self.cache.sadd('urls', url)
             yield scrapy.Request(
                 url,
                 callback=self.parse_itempage)
