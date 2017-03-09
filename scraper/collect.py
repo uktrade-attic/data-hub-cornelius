@@ -28,6 +28,7 @@ OUTPUT_DIR = os.path.join(__here__, "..", "output")
 #     return bucket
 
 def local_cache(input_dir):
+    """Walk input dir and yield contents"""
     for (dirpath, _, filenames) in os.walk(input_dir):
         for filename in filenames:
             if filename == "response_body":
@@ -40,17 +41,19 @@ def local_cache(input_dir):
                         yield text
 
 def collect_data(items):
+    """Convert to json"""
     for text in items:
         data = json.loads(text)
-        if "error" in data:
+        if 'd' in data:
             continue
-        if "EntitySets" in data['d']:
+        if 'EntitySets' in data['d']:
             continue
         items = data['d']['results']
         for item in items:
             yield item
 
 def write_data(data, output_dir):
+    "Write data to output file"
     for item in collect_data(data):
         key = item['__metadata']['type'].split(".")[-1] + ".jsonlines"
         filename = os.path.join(output_dir, key)
@@ -59,6 +62,7 @@ def write_data(data, output_dir):
             writeline(json.dumps(item))
 
 def main():
+    """Do the stuff"""
     data = local_cache(INPUT_DIR)
     write_data(data, OUTPUT_DIR)
 
