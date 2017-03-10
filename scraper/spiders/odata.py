@@ -100,3 +100,5 @@ class OdataSpider(scrapy.Spider):
             yield scrapy.Request(
                 url,
                 callback=self.parse_itempage)
+        for result in data['d'].get('results', []):
+            yield result

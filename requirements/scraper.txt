@@ -4,3 +4,4 @@ requests
 pyquery
 redis
 httpie
+elasticsearch

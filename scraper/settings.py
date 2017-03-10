@@ -54,9 +54,9 @@ DEFAULT_REQUEST_HEADERS = {
 
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    'scraper.pipelines.ScraperPipeline': 300,
-# }
+ITEM_PIPELINES = {
+    'scraper.pipelines.ESPipeline': 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See http://doc.scrapy.org/en/latest/topics/autothrottle.html
@@ -94,6 +94,7 @@ REDIS_PORT = os.environ['REDIS_PORT']
 REDIS_DB = os.environ['REDIS_DB']
 
 RETRY_ENABLED = True
+INDEX_NAME = 'odata'
 
 SCRAPE_ENTITIES = frozenset([
     "optevia_servicedeliverySet",
