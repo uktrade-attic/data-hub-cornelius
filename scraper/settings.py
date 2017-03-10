@@ -96,6 +96,8 @@ REDIS_HOST = os.environ['REDIS_HOST']
 REDIS_PORT = os.environ['REDIS_PORT']
 REDIS_DB = os.environ['REDIS_DB']
 
+RETRY_ENABLED = True
+
 SCRAPE_ENTITIES = frozenset([
     "optevia_servicedelivery",
     "optevia_servicedeliverystatus",
