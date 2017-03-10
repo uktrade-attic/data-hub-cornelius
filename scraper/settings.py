@@ -95,3 +95,10 @@ CDMS_PASSWORD = os.environ['CDMS_PASSWORD']
 REDIS_HOST = os.environ['REDIS_HOST']
 REDIS_PORT = os.environ['REDIS_PORT']
 REDIS_DB = os.environ['REDIS_DB']
+
+SCRAPE_ENTITIES = frozenset([
+    "optevia_servicedelivery",
+    "optevia_servicedeliverystatus",
+    "optevia_serviceoffer",
+    "optevia_serviceoffercountry",
+    "optevia_event"])

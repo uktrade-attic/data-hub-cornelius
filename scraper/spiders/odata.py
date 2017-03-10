@@ -64,9 +64,10 @@ class OdataSpider(scrapy.Spider):
             # yield data
             items = data['d']['EntitySets']
             for item in items:
-                yield scrapy.Request(
-                    response.urljoin(item),
-                    callback=self.parse_itempage)
+                if item in settings.SCRAPE_ENTITIES:
+                    yield scrapy.Request(
+                        response.urljoin(item),
+                        callback=self.parse_itempage)
 
     def parse_itempage(self, response):
         if response.status == 302:
