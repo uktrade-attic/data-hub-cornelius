@@ -6,3 +6,4 @@ redis
 httpie
 elasticsearch
 ipdb
+retry

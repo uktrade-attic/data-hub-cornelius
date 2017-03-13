@@ -3,10 +3,12 @@ import json
 import urllib
 
 import scrapy
+from elasticsearch import Elasticsearch
 
 from scraper import settings, auth
 
 from redis import StrictRedis
+from retry import api
 
 
 def _get_cookie_domain(url):
@@ -49,8 +51,13 @@ class OdataSpider(scrapy.Spider):
     def _previous_urls(self):
         return self.cache.sscan_iter('urls')
 
+    @api.retry(ConnectionRefusedError)
+    def check_elasticsearch(self):
+        Elasticsearch('elasticsearch')
+
     def __init__(self, *args, **kwargs):
         super(OdataSpider, self).__init__(*args, **kwargs)
+        self.check_elasticsearch()
         self.cache = StrictRedis(
             host=settings.REDIS_HOST,
             port=settings.REDIS_PORT,
