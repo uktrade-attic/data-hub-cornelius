@@ -5,3 +5,4 @@ pyquery
 redis
 httpie
 elasticsearch
+ipdb

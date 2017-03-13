@@ -7,8 +7,9 @@ from scraper import settings
 
 INDEX = settings.INDEX_NAME
 
-def get_es_client(**kwargs):
-    return Elasticsearch(**kwargs)
+
+def get_es_client():
+    return Elasticsearch('elasticsearch')
 
 
 def create_es_index(es_client):
