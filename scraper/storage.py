@@ -24,6 +24,7 @@ filenames = [
     'response_headers',
     'response_body']
 
+
 def make_delete_objects(path_func):
     return {'Objects': [{'Key': path_func(k)} for k in filenames]}
 
@@ -43,6 +44,7 @@ def get_s3_text(bucket, key):
     body.seek(0)
     text = body.read()
     return text
+
 
 def send_s3_text(bucket, key, body):
     body = io.BytesIO(body)
@@ -112,11 +114,13 @@ class S3CacheStorage(object):
         for key, body in pairs:
             send_s3_text(self.bucket, path(key), body)
 
+
 def storage_path(request, *args):
     fingerprint = request_fingerprint(request)
     path = "/".join(listify(cache_key_prefix, get_path(request.url), fingerprint, *args))
     path = path.replace("//", "/")
     return path
+
 
 def get_path(url):
     without_protocol = url.split("//", 1)[-1]

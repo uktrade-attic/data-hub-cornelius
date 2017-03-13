@@ -64,6 +64,7 @@ def login(url, username, password, user_agent=None):
     submit_form(session, resp.content)
     return session
 
+
 def submit_form(session, source, url=None, params={}):
     """
     It submits the form contained in the `source` param optionally

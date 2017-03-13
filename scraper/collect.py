@@ -40,6 +40,7 @@ def local_cache(input_dir):
                     else:
                         yield text
 
+
 def collect_data(items):
     """Convert to json"""
     for text in items:
@@ -52,6 +53,7 @@ def collect_data(items):
         for item in items:
             yield item
 
+
 def write_data(data, output_dir):
     "Write data to output file"
     for item in collect_data(data):
@@ -60,6 +62,7 @@ def write_data(data, output_dir):
         with open(filename, "a") as f:
             writeline = functools.partial(print, file=f)
             writeline(json.dumps(item))
+
 
 def main():
     """Do the stuff"""
