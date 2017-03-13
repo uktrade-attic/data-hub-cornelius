@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import urllib
 
 import scrapy
 
@@ -17,11 +18,14 @@ def get_cookies():
         settings.CDMS_USERNAME,
         settings.CDMS_PASSWORD,
         user_agent=settings.USER_AGENT)
+    cookie_filter = ".{}".format(
+        urllib.parse.urlparse(settings.CDMS_BASE_URL).netloc)
     for domain in session.cookies.list_domains():
-        if not domain == ".cdms.ukti.gov.uk":
+        if not domain == cookie_filter:
             session.cookies.clear(domain)
     cookies = session.cookies.get_dict()
     return cookies
+
 
 def retry(response):
     cookies = get_cookies()
