@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import urllib
 
 # Scrapy settings for scraper project
 #
@@ -15,10 +16,6 @@ BOT_NAME = 'scraper'
 
 SPIDER_MODULES = ['scraper.spiders']
 NEWSPIDER_MODULE = 'scraper.spiders'
-
-START_URLS = ["https://ukti.cdms.ukti.gov.uk/XRMServices/2011/OrganizationData.svc/"]
-ALLOWED_DOMAINS = ["ukti.cdms.ukti.gov.uk"]
-
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'scraper'
@@ -99,8 +96,11 @@ REDIS_DB = os.environ['REDIS_DB']
 RETRY_ENABLED = True
 
 SCRAPE_ENTITIES = frozenset([
-    "optevia_servicedelivery",
-    "optevia_servicedeliverystatus",
-    "optevia_serviceoffer",
-    "optevia_serviceoffercountry",
-    "optevia_event"])
+    "optevia_servicedeliverySet",
+    "optevia_servicedeliverystatusSet",
+    "optevia_serviceofferSet",
+    "optevia_serviceoffercountrySet",
+    "optevia_eventSet"])
+
+START_URLS = ["{}/XRMServices/2011/OrganizationData.svc/".format(CDMS_BASE_URL)]
+ALLOWED_DOMAINS = [urllib.parse.urlparse(CDMS_BASE_URL).netloc]
