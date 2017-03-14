@@ -4,6 +4,7 @@ import urllib
 
 import scrapy
 from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import ElasticsearchException
 
 from scraper import settings, auth
 
@@ -43,6 +44,11 @@ def retry(response):
     return request
 
 
+@api.retry(ElasticsearchException)
+def check_elasticsearch():
+    Elasticsearch('elasticsearch')
+
+
 class OdataSpider(scrapy.Spider):
     name = 'odata'
     allowed_domains = settings.ALLOWED_DOMAINS
@@ -51,13 +57,9 @@ class OdataSpider(scrapy.Spider):
     def _previous_urls(self):
         return self.cache.sscan_iter('urls')
 
-    @api.retry(ConnectionRefusedError)
-    def check_elasticsearch(self):
-        Elasticsearch('elasticsearch')
-
     def __init__(self, *args, **kwargs):
         super(OdataSpider, self).__init__(*args, **kwargs)
-        self.check_elasticsearch()
+        check_elasticsearch()
         self.cache = StrictRedis(
             host=settings.REDIS_HOST,
             port=settings.REDIS_PORT,
