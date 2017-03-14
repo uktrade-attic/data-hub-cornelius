@@ -9,6 +9,14 @@ from scraper import settings, auth
 from redis import StrictRedis
 
 
+def _get_cookie_domain(url):
+    netloc = urllib.parse.urlparse(url).netloc
+    parts = netloc.split(".")
+    parts[0] = ""
+    parent_sub_domain = ".".join(parts)
+    return parent_sub_domain
+
+
 def get_cookies():
     login_url = "{}/?whr={}".format(
         settings.CDMS_BASE_URL,
@@ -18,8 +26,7 @@ def get_cookies():
         settings.CDMS_USERNAME,
         settings.CDMS_PASSWORD,
         user_agent=settings.USER_AGENT)
-    cookie_filter = ".{}".format(
-        urllib.parse.urlparse(settings.CDMS_BASE_URL).netloc)
+    cookie_filter = _get_cookie_domain(settings.CDMS_BASE_URL)
     for domain in session.cookies.list_domains():
         if not domain == cookie_filter:
             session.cookies.clear(domain)
