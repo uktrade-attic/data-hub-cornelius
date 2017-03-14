@@ -58,6 +58,9 @@ class OdataSpider(scrapy.Spider):
 
     def start_requests(self):
         cookies = get_cookies()
+        print("=" * 16)
+        print(cookies)
+        print("=" * 16)
         for url in self._previous_urls():
             yield scrapy.Request(
                 url.decode("utf-8"),
