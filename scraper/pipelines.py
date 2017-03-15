@@ -29,37 +29,34 @@ class ESPipeline(object):
         create_es_index(self.client)
 
     def process_item(self, item, spider):
-        print('='*120)
-        print(item)
-        print('=' * 120)
-        if self.exists(item):
-            self.update(item)
+        doc_type = item['__metadata']['type'].split('.')[-1]
+        item_id = item.pop(doc_type+'Id')
+        if self.exists(doc_type, item_id):
+            self.update(item, doc_type, item_id)
         else:
-            self.create(item)
+            self.create(item, doc_type, item_id)
         return item
 
-    def create(self, item):
-        item_id = item.pop('id')
+    def create(self, item, doc_type, item_id):
         self.client.create(
             index=INDEX,
-            doc_type=item['type'],
+            doc_type=doc_type,
             id=item_id,
             body=item
         )
 
-    def update(self, item):
-        item_id = item.pop('id')
+    def update(self, item, doc_type, item_id):
         self.client.update(
             index=INDEX,
-            doc_type=item['type'],
+            doc_type=doc_type,
             id=item_id,
             body=item
         )
 
-    def exists(self, item):
+    def exists(self, doc_type, item_id):
         return self.client.exists(
             index=INDEX,
-            doc_type=item['type'],
-            id=item['id'],
+            doc_type=doc_type,
+            id=item_id,
             realtime=True
         )

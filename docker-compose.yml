@@ -18,7 +18,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_DB=1
       - ES_HOST=elasticsearch
-      - ES PORT=9200
+      - ES_PORT=9200
       - ES_INDEX=odata
     command: /app/start.sh
     links:
