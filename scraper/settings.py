@@ -93,8 +93,12 @@ REDIS_HOST = os.environ['REDIS_HOST']
 REDIS_PORT = os.environ['REDIS_PORT']
 REDIS_DB = os.environ['REDIS_DB']
 
+ES_HOST = os.environ['ES_HOST']
+ES_PORT = os.environ['ES_PORT']
+ES_INDEX = os.environ['ES_INDEX']
+
 RETRY_ENABLED = True
-INDEX_NAME = 'odata'
+
 
 SCRAPE_ENTITIES = frozenset([
     "optevia_servicedeliverySet",

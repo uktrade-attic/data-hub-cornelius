@@ -5,11 +5,15 @@ from elasticsearch.client import IndicesClient
 
 from scraper import settings
 
-INDEX = settings.INDEX_NAME
+INDEX = settings.ES_INDEX
 
 
-def get_es_client():
-    return Elasticsearch('elasticsearch')
+def get_elasticsearch_client():
+    """Return an instance of the elasticsearch client or similar."""
+    return Elasticsearch([{
+        'host': settings.ES_HOST,
+        'port': settings.ES_PORT
+    }])
 
 
 def create_es_index(es_client):
@@ -21,7 +25,7 @@ def create_es_index(es_client):
 class ESPipeline(object):
 
     def open_spider(self, spider):
-        self.client = get_es_client()
+        self.client = get_elasticsearch_client()
         create_es_index(self.client)
 
     def process_item(self, item, spider):

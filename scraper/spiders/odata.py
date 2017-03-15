@@ -11,6 +11,8 @@ from scraper import settings, auth
 from redis import StrictRedis
 from retry import api
 
+from scraper.pipelines import get_elasticsearch_client
+
 
 def _get_cookie_domain(url):
     netloc = urllib.parse.urlparse(url).netloc
@@ -46,7 +48,7 @@ def retry(response):
 
 @api.retry(ElasticsearchException)
 def check_elasticsearch():
-    Elasticsearch('elasticsearch')
+    get_elasticsearch_client()
 
 
 class OdataSpider(scrapy.Spider):
@@ -67,9 +69,6 @@ class OdataSpider(scrapy.Spider):
 
     def start_requests(self):
         cookies = get_cookies()
-        print("=" * 16)
-        print(cookies)
-        print("=" * 16)
         for url in self._previous_urls():
             yield scrapy.Request(
                 url.decode("utf-8"),
