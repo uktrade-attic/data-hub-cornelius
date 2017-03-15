@@ -29,6 +29,9 @@ class ESPipeline(object):
         create_es_index(self.client)
 
     def process_item(self, item, spider):
+        print('='*120)
+        print(item)
+        print('=' * 120)
         if self.exists(item):
             self.update(item)
         else:
