@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import urllib
+import urllib.parse
 
 # Scrapy settings for scraper project
 #
