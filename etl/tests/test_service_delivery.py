@@ -18,6 +18,4 @@ def test_cdms_to_leeloo():
     data = get_fixture('service_delivery_cdms')
     result = leeloo.service_delivery(data)
     expected = get_fixture('service_delivery_leeloo')
-    import pprint
-    pprint.pprint(result)
     assert result == expected
