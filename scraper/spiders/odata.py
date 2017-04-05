@@ -123,7 +123,7 @@ class OdataSpider(scrapy.Spider):
             return
 
         logger.info('Queuing retry for URL: %s', response.request.url)
-        self.cookies = get_cookies()
+        self._refresh_cookies()
 
         new_request = response.request.replace(cookies=self.cookies,
                                                dont_filter=True)
