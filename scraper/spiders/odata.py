@@ -36,45 +36,29 @@ def get_cookies():
     return cookies
 
 
-def retry(response):
-    logger.info('Queuing retry for URL: %s', response.request.url)
-    cookies = get_cookies()
-    request = response.request.copy()
-    request.cookies = cookies
-    return request
-
-
 class OdataSpider(scrapy.Spider):
     name = 'odata'
     allowed_domains = settings.ALLOWED_DOMAINS
     start_urls = settings.START_URLS
 
-    def _previous_urls(self):
-        return self.cache.sscan_iter('urls')
-
     def __init__(self, *args, **kwargs):
-        super(OdataSpider, self).__init__(*args, **kwargs)
-        self.cache = StrictRedis(
-            host=settings.REDIS_HOST,
-            port=settings.REDIS_PORT,
-            db=settings.REDIS_DB)
+        super().__init__(*args, **kwargs)
+        self.cache = None
+        self.cookies = None
+
+        if settings.REDIS_ENABLED:
+            self.cache = StrictRedis(
+                host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                db=settings.REDIS_DB)
 
     def start_requests(self):
-        cookies = get_cookies()
-        print("=" * 16)
-        print(cookies)
-        print("=" * 16)
-        for url in self._previous_urls():
-            yield scrapy.Request(
-                url.decode("utf-8"),
-                cookies=cookies,
-                callback=self.parse_homepage)
+        self._refresh_cookies()
+        self._queue_previous_urls()
+
         for url in settings.START_URLS:
             logger.info('Queuing initial URL: %s', url)
-            yield scrapy.Request(
-                url,
-                cookies=cookies,
-                callback=self.parse_homepage)
+            yield self._make_request(url, callback=self.parse_homepage)
 
     def parse_homepage(self, response):
         if response.url.strip("/").endswith(".svc"):
@@ -87,22 +71,72 @@ class OdataSpider(scrapy.Spider):
             items = data['d']['EntitySets']
             for item in items:
                 if item in settings.SCRAPE_ENTITIES:
-                    yield scrapy.Request(
-                        response.urljoin(item),
-                        callback=self.parse_itempage)
+                    url = response.urljoin(item)
+                    logger.info('Queuing entity URL: %s', url)
+                    yield self._make_request(url, callback=self.parse_itempage)
+                else:
+                    logger.info('Skipping entity: %s', item)
 
     def parse_itempage(self, response):
-        logger.info('%d response received for URL: %s', response.status, response.request.url)
+        logger.info('%d response received for URL: %s', response.status,
+                    response.request.url)
         if response.status == 302:
-            yield retry(response)
+            yield self._retry(response)
         elif response.status == 200:
-            self.cache.srem('urls', response.url)
+            self._remove_url_from_cache(response.url)
         data = json.loads(response.body.decode("utf-8"))
+
         # yield data
         if '__next' in data['d']:
             url = data['d']['__next']
-            self.cache.sadd('urls', url)
+            self._add_url_to_cache(url)
             logger.info('Queuing next URL: %s', url)
-            yield scrapy.Request(
-                url,
-                callback=self.parse_itempage)
+            yield self._make_request(url, callback=self.parse_itempage)
+
+    def _queue_previous_urls(self):
+        for url in self._previous_urls():
+            url = url.decode("utf-8")
+            logger.info('Queuing URL from redis: %s', url)
+            yield self._make_request(url, callback=self.parse_homepage)
+
+    def _previous_urls(self):
+        return self.cache.sscan_iter('urls') if self.cache else ()
+
+    def _add_url_to_cache(self, url):
+        if self.cache:
+            self.cache.sadd('urls', url)
+
+    def _remove_url_from_cache(self, url):
+        if self.cache:
+            self.cache.srem('urls', url)
+
+    def _refresh_cookies(self):
+        self.cookies = get_cookies()
+
+    def _make_request(self, url, callback):
+        return scrapy.Request(
+            url, callback=callback, cookies=self.cookies,
+            errback=_handle_error,
+            meta={
+                'dont_merge_cookies': True,
+                'dont_redirect': True
+            })
+
+    def _retry(self, response):
+        num_retries = response.request.meta.get('retry_times', 0) + 1
+        if num_retries >= 5:
+            logger.error('Max attempts exceeded for URL: %s',
+                         response.request.url)
+            return
+
+        logger.info('Queuing retry for URL: %s', response.request.url)
+        self.cookies = get_cookies()
+
+        new_request = response.request.replace(cookies=self.cookies,
+                                               dont_filter=True)
+        new_request.meta['retry_times'] = num_retries
+        return new_request
+
+
+def _handle_error(failure):
+    logger.error('Scrapy error:\n%s', failure.getTraceback())

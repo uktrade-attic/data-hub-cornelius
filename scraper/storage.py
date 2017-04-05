@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import io
+import logging
 import pickle
 from time import time
 import functools
@@ -13,6 +14,8 @@ from scrapy.utils.request import request_fingerprint
 
 import boto3
 import botocore
+
+logger = logging.getLogger(__name__)
 
 cache_key_prefix = "CACHE"
 
@@ -68,6 +71,8 @@ class S3CacheStorage(object):
         pass
 
     def retrieve_response(self, spider, request):
+        logging.info('Retrieving response from cache for URL: %s', request.url)
+
         path = functools.partial(storage_path, request)
         try:
             _metadata = get_s3_text(self.bucket, path('pickled_meta'))

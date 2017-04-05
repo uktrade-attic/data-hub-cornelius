@@ -92,6 +92,7 @@ CDMS_ADFS_URL = os.environ['CDMS_ADFS_URL']
 CDMS_USERNAME = os.environ['CDMS_USERNAME']
 CDMS_PASSWORD = os.environ['CDMS_PASSWORD']
 
+REDIS_ENABLED = False
 REDIS_HOST = os.environ['REDIS_HOST']
 REDIS_PORT = os.environ['REDIS_PORT']
 REDIS_DB = os.environ['REDIS_DB']
