@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 import json
-import urllib
+import logging
+import urllib.parse
 
 import scrapy
+from redis import StrictRedis
 
 from scraper import settings, auth
 
-from redis import StrictRedis
+logger = logging.getLogger(__name__)
 
 
 def _get_cookie_domain(url):
@@ -67,6 +69,7 @@ class OdataSpider(scrapy.Spider):
                 cookies=cookies,
                 callback=self.parse_homepage)
         for url in settings.START_URLS:
+            logger.info('Queuing initial URL: %s', url)
             yield scrapy.Request(
                 url,
                 cookies=cookies,
@@ -88,6 +91,7 @@ class OdataSpider(scrapy.Spider):
                         callback=self.parse_itempage)
 
     def parse_itempage(self, response):
+        logger.info('%d response received for URL: %s', response.status, response.request.url)
         if response.status == 302:
             yield retry(response)
         elif response.status == 200:
@@ -97,6 +101,7 @@ class OdataSpider(scrapy.Spider):
         if '__next' in data['d']:
             url = data['d']['__next']
             self.cache.sadd('urls', url)
+            logger.info('Queuing next URL: %s', url)
             yield scrapy.Request(
                 url,
                 callback=self.parse_itempage)

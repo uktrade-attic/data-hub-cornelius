@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import logging
 import os
 import urllib
 
@@ -81,6 +82,8 @@ HTTPCACHE_STORAGE = 'scraper.storage.S3CacheStorage'
 HTTPCACHE_GZIP = False
 COMPRESSION_ENABLED = False
 
+LOG_LEVEL = logging.INFO
+LOG_ENABLED = True
 S3CACHE_BUCKET = os.environ['S3CACHE_BUCKET']
 AWS_REGION = os.environ['AWS_REGION']
 
