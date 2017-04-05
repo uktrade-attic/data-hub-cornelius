@@ -80,10 +80,7 @@ class OdataSpider(scrapy.Spider):
     def parse_itempage(self, response):
         logger.info('%d response received for URL: %s', response.status,
                     response.request.url)
-        if response.status == 302:
-            yield self._retry(response)
-        elif response.status == 200:
-            self._remove_url_from_cache(response.url)
+        self._remove_url_from_cache(response.url)
         data = json.loads(response.body.decode("utf-8"))
 
         # yield data
@@ -116,9 +113,8 @@ class OdataSpider(scrapy.Spider):
     def _make_request(self, url, callback):
         return scrapy.Request(
             url, callback=callback, cookies=self.cookies,
-            errback=_handle_error,
+            errback=self._handle_error,
             meta={
-                'dont_merge_cookies': True,
                 'dont_redirect': True
             })
 
@@ -137,6 +133,10 @@ class OdataSpider(scrapy.Spider):
         new_request.meta['retry_times'] = num_retries
         return new_request
 
-
-def _handle_error(failure):
-    logger.error('Scrapy error:\n%s', failure.getTraceback())
+    def _handle_error(self, failure):
+        response = getattr(failure.value, 'response')
+        if response and response.status == 302:
+            yield self._retry(response)
+        else:
+            logger.error('Scrapy error\nResponse\n%s:Traceback:\n%s',
+                         response, failure.getTraceback())
