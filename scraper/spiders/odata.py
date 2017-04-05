@@ -37,6 +37,7 @@ def get_cookies():
 
 
 def retry(response):
+    logger.info('Queuing retry for URL: %s', response.request.url)
     cookies = get_cookies()
     request = response.request.copy()
     request.cookies = cookies
