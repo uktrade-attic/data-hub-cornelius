@@ -99,12 +99,5 @@ REDIS_DB = os.environ['REDIS_DB']
 
 RETRY_ENABLED = True
 
-SCRAPE_ENTITIES = frozenset([
-    "optevia_servicedeliverySet",
-    "optevia_servicedeliverystatusSet",
-    "optevia_serviceofferSet",
-    "optevia_serviceoffercountrySet",
-    "optevia_eventSet"])
-
 START_URLS = ["{}/XRMServices/2011/OrganizationData.svc/".format(CDMS_BASE_URL)]
 ALLOWED_DOMAINS = [urllib.parse.urlparse(CDMS_BASE_URL).netloc]

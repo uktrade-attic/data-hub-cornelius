@@ -70,12 +70,9 @@ class OdataSpider(scrapy.Spider):
             # yield data
             items = data['d']['EntitySets']
             for item in items:
-                if item in settings.SCRAPE_ENTITIES:
-                    url = response.urljoin(item)
-                    logger.info('Queuing entity URL: %s', url)
-                    yield self._make_request(url, callback=self.parse_itempage)
-                else:
-                    logger.info('Skipping entity: %s', item)
+                url = response.urljoin(item)
+                logger.info('Queuing entity URL: %s', url)
+                yield self._make_request(url, callback=self.parse_itempage)
 
     def parse_itempage(self, response):
         logger.info('%d response received for URL: %s', response.status,
