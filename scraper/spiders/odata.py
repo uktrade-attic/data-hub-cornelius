@@ -64,9 +64,9 @@ class OdataSpider(scrapy.Spider):
         if response.url.strip("/").endswith(".svc"):
             try:
                 data = json.loads(response.body.decode("utf-8"))
-            except Exception as e:
+            except Exception:
                 print(response.body)
-                raise e
+                raise
             # yield data
             items = data['d']['EntitySets']
             for item in items:
