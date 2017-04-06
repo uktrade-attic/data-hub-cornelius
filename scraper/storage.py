@@ -71,8 +71,6 @@ class S3CacheStorage(object):
         pass
 
     def retrieve_response(self, spider, request):
-        logging.info('Retrieving response from cache for URL: %s', request.url)
-
         path = functools.partial(storage_path, request)
         try:
             _metadata = get_s3_text(self.bucket, path('pickled_meta'))
@@ -83,6 +81,8 @@ class S3CacheStorage(object):
                 return None
             else:
                 raise
+
+        logging.info('Retrieved response from cache for URL: %s', request.url)
 
         metadata = pickle.loads(_metadata)
 
