@@ -6,7 +6,7 @@ import urllib.parse
 import scrapy
 from redis import StrictRedis
 
-from scraper import settings, auth
+from scraper import auth, settings
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +38,13 @@ def _get_cookies():
 
 class OdataSpider(scrapy.Spider):
     """A Scrapy spider for OData v1 services."""
+
     name = 'odata'
     allowed_domains = settings.ALLOWED_DOMAINS
     start_urls = settings.START_URLS
 
     def __init__(self, *args, **kwargs):
+        """Initialises the spider."""
         super().__init__(*args, **kwargs)
         self.cache = None
         self.cookies = None
@@ -54,9 +56,10 @@ class OdataSpider(scrapy.Spider):
                 db=settings.REDIS_DB)
 
     def start_requests(self):
-        """Queues the initial request(s) in the scraping job. Typically this 
-        queues a request for the service root URL that returns a list of 
-        entity types.
+        """Queues the initial request(s) in the scraping job.
+
+        Typically this queues a request for the service root URL that
+        returns a list of entity types.
         """
         self._refresh_cookies()
         self._queue_previous_urls()
@@ -66,14 +69,16 @@ class OdataSpider(scrapy.Spider):
             yield self._make_request(url, callback=self.parse_homepage)
 
     def parse_homepage(self, response):
-        """Parses a response for a service root URL, and queues requests 
+        """Processes a response for a service root URL.
+
+        This includes parsing the response, and queuing requests
         for each entity collection specified in the response.
         """
         if response.url.strip("/").endswith(".svc"):
             try:
                 data = json.loads(response.body.decode("utf-8"))
             except Exception:
-                print(response.body)
+                logger.error(response.body)
                 raise
             # yield data
             items = data['d']['EntitySets']
@@ -83,8 +88,10 @@ class OdataSpider(scrapy.Spider):
                 yield self._make_request(url, callback=self.parse_itempage)
 
     def parse_itempage(self, response):
-        """Parses a response for an entity collection endpoint, and queues 
-        a request for the next page (if there is one).
+        """Processes a response for an entity collection endpoint.
+
+        This includes parsing the response, and queuing a request for the
+        next page (if there is one).
         """
         logger.info('%d response received for URL: %s', response.status,
                     response.request.url)
@@ -99,8 +106,9 @@ class OdataSpider(scrapy.Spider):
             yield self._make_request(url, callback=self.parse_itempage)
 
     def _queue_previous_urls(self):
-        """Queues incomplete URLs from previous runs (if the cache 
-        server is enabled).
+        """Queues incomplete URLs from previous runs.
+
+        (Does nothing if the cache server is disabled.)
         """
         for url in self._previous_urls():
             url = url.decode("utf-8")
@@ -126,10 +134,12 @@ class OdataSpider(scrapy.Spider):
         self.cookies = _get_cookies()
 
     def _make_request(self, url, callback):
-        """Creates a Scrapy request object, using the cookies for the 
-        current session, disabling redirects and specifying an error callback.
-        
-        Note that this does not actually queue the request.        
+        """Creates a Scrapy request object.
+
+        The request object is created using the cookies for the current
+        session, with redirects disabled and an error callback specified.
+
+        Note that this does not actually queue the request.
         """
         return scrapy.Request(
             url, callback=callback, cookies=self.cookies,
@@ -156,8 +166,8 @@ class OdataSpider(scrapy.Spider):
 
     def _handle_error(self, failure):
         """Handles Scrapy request errors.
-        
-        This function is passed as the error callback when making Scrapy 
+
+        This function is passed as the error callback when making Scrapy
         requests.
         """
         response = getattr(failure.value, 'response')
