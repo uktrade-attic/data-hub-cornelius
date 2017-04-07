@@ -53,7 +53,7 @@ def send_s3_text(bucket, key, body):
     body.close()
 
 
-class S3CacheStorage(object):
+class S3CacheStorage:
     def __init__(self, settings):
         self.bucket_name = settings['S3CACHE_BUCKET']
         assert self.bucket_name, "No bucket configured"
