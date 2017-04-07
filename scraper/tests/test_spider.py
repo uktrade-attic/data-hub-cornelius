@@ -28,7 +28,7 @@ class MockCookies:
         return self.domains
 
 
-class MockSession():
+class MockSession:
     cookies = MockCookies()
 
 
