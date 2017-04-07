@@ -91,7 +91,7 @@ class OdataSpider(scrapy.Spider):
         for url in self._previous_urls():
             url = url.decode("utf-8")
             logger.info('Queuing URL from redis: %s', url)
-            yield self._make_request(url, callback=self.parse_homepage)
+            yield self._make_request(url, callback=self.parse_itempage)
 
     def _previous_urls(self):
         return self.cache.sscan_iter('urls') if self.cache else ()
