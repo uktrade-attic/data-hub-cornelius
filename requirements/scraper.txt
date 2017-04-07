@@ -1,0 +1,6 @@
+scrapy
+boto3
+requests
+pyquery
+redis
+httpie
