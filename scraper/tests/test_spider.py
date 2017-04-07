@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 
-import unittest.mock
+from unittest.mock import patch
 
 from scraper.spiders import odata
 
+MOCK_SETTINGS = {
+    "CDMS_BASE_URL": "http://flim.flam.example.com",
+    "CDMS_ADFS_URL": "http://blom.blap.example.com",
+    "CDMS_USERNAME": "mr_flibble",
+    "CDMS_PASSWORD": "P455w0rd",
+    "USER_AGENT": "firefox",
+    "S3CACHE_BUCKET": "example.com_flibble"
+}
 
-class MockSettings(object):
-    CDMS_BASE_URL = "http://flim.flam.example.com"
-    CDMS_ADFS_URL = "http://blom.blap.example.com"
-    CDMS_USERNAME = "mr_flibble"
-    CDMS_PASSWORD = "P455w0rd"
-    USER_AGENT = "firefox"
 
-
-class MockCookies(object):
+class MockCookies:
     def __init__(self):
         self.domains = [
             ".flam.example.com",
@@ -29,7 +30,7 @@ class MockCookies(object):
         return self.domains
 
 
-class MockSession(object):
+class MockSession():
     cookies = MockCookies()
 
 
@@ -44,9 +45,8 @@ def test_get_cookie_domain():
     assert result == expected, (result, expected)
 
 
-@unittest.mock.patch("scraper.spiders.odata.settings", MockSettings())
-@unittest.mock.patch("scraper.spiders.odata.auth.login", mock_login)
+@patch("scraper.spiders.odata.auth.login", mock_login)
 def test_get_cookies():
     expected = [".flam.example.com"]
-    result = odata._get_cookies()
+    result = odata._get_cookies(MOCK_SETTINGS)
     assert result == expected, (result, expected)

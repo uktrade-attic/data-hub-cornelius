@@ -6,54 +6,47 @@ import urllib.parse
 import scrapy
 from redis import StrictRedis
 
-from scraper import auth, settings
+from scraper import auth
 
 logger = logging.getLogger(__name__)
-
-
-def _get_cookie_domain(url):
-    netloc = urllib.parse.urlparse(url).netloc
-    parts = netloc.split(".")
-    parts[0] = ""
-    parent_sub_domain = ".".join(parts)
-    return parent_sub_domain
-
-
-def _get_cookies():
-    login_url = "{}/?whr={}".format(
-        settings.CDMS_BASE_URL,
-        settings.CDMS_ADFS_URL)
-    session = auth.login(
-        login_url,
-        settings.CDMS_USERNAME,
-        settings.CDMS_PASSWORD,
-        user_agent=settings.USER_AGENT)
-    cookie_filter = _get_cookie_domain(settings.CDMS_BASE_URL)
-    for domain in session.cookies.list_domains():
-        if not domain == cookie_filter:
-            session.cookies.clear(domain)
-    cookies = session.cookies.get_dict()
-    return cookies
 
 
 class OdataSpider(scrapy.Spider):
     """A Scrapy spider for OData v1 services."""
 
     name = 'odata'
-    allowed_domains = settings.ALLOWED_DOMAINS
-    start_urls = settings.START_URLS
 
     def __init__(self, *args, **kwargs):
         """Initialises the spider."""
         super().__init__(*args, **kwargs)
-        self.cache = None
-        self.cookies = None
 
-        if settings.REDIS_ENABLED:
-            self.cache = StrictRedis(
-                host=settings.REDIS_HOST,
-                port=settings.REDIS_PORT,
-                db=settings.REDIS_DB)
+        self.allowed_domains = None
+        self._cache = None
+        self._cookies = None
+
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        """Creates the spider.
+
+        This is overridden to get access to the settings in order to perform
+        initialisation.
+
+        Refer to https://doc.scrapy.org/en/latest/topics/settings.html#how-to-access-settings
+        """
+        spider = super().from_crawler(crawler, *args, **kwargs)
+        spider.setup()
+        return spider
+
+    def setup(self):
+        """Performs additional initialisation once settings are available."""
+        self.allowed_domains = self.settings['ALLOWED_DOMAINS']
+        self.start_urls = self.settings['START_URLS']
+
+        if self.settings['REDIS_ENABLED']:
+            self._cache = StrictRedis(
+                host=self.settings['REDIS_HOST'],
+                port=self.settings['REDIS_PORT'],
+                db=self.settings['REDIS_DB'])
 
     def start_requests(self):
         """Queues the initial request(s) in the scraping job.
@@ -64,7 +57,7 @@ class OdataSpider(scrapy.Spider):
         self._refresh_cookies()
         self._queue_previous_urls()
 
-        for url in settings.START_URLS:
+        for url in self.settings['START_URLS']:
             logger.info('Queuing initial URL: %s', url)
             yield self._make_request(url, callback=self.parse_homepage)
 
@@ -117,21 +110,21 @@ class OdataSpider(scrapy.Spider):
 
     def _previous_urls(self):
         """Returns incomplete URLs from the cache server (if enabled)."""
-        return self.cache.sscan_iter('urls') if self.cache else ()
+        return self._cache.sscan_iter('urls') if self._cache else ()
 
     def _add_url_to_cache(self, url):
         """Stores a URL in the cache server (if enabled)."""
-        if self.cache:
-            self.cache.sadd('urls', url)
+        if self._cache:
+            self._cache.sadd('urls', url)
 
     def _remove_url_from_cache(self, url):
         """Removes a URL from the cache server (if enabled)."""
-        if self.cache:
-            self.cache.srem('urls', url)
+        if self._cache:
+            self._cache.srem('urls', url)
 
     def _refresh_cookies(self):
         """Creates a new session with the OData service."""
-        self.cookies = _get_cookies()
+        self._cookies = _get_cookies(self.settings)
 
     def _make_request(self, url, callback):
         """Creates a Scrapy request object.
@@ -142,7 +135,7 @@ class OdataSpider(scrapy.Spider):
         Note that this does not actually queue the request.
         """
         return scrapy.Request(
-            url, callback=callback, cookies=self.cookies,
+            url, callback=callback, cookies=self._cookies,
             errback=self._handle_error,
             meta={
                 'dont_redirect': True
@@ -159,7 +152,7 @@ class OdataSpider(scrapy.Spider):
         logger.info('Queuing retry for URL: %s', response.request.url)
         self._refresh_cookies()
 
-        new_request = response.request.replace(cookies=self.cookies,
+        new_request = response.request.replace(cookies=self._cookies,
                                                dont_filter=True)
         new_request.meta['retry_times'] = num_retries
         return new_request
@@ -180,3 +173,28 @@ class OdataSpider(scrapy.Spider):
             # Often these are 403s.
             logger.error('Scrapy error\nResponse\n%s:Traceback:\n%s',
                          response, failure.getTraceback())
+
+
+def _get_cookie_domain(url):
+    netloc = urllib.parse.urlparse(url).netloc
+    parts = netloc.split(".")
+    parts[0] = ""
+    parent_sub_domain = ".".join(parts)
+    return parent_sub_domain
+
+
+def _get_cookies(settings):
+    login_url = "{}/?whr={}".format(
+        settings['CDMS_BASE_URL'],
+        settings['CDMS_ADFS_URL'])
+    session = auth.login(
+        login_url,
+        settings['CDMS_USERNAME'],
+        settings['CDMS_PASSWORD'],
+        user_agent=settings['USER_AGENT'])
+    cookie_filter = _get_cookie_domain(settings['CDMS_BASE_URL'])
+    for domain in session.cookies.list_domains():
+        if not domain == cookie_filter:
+            session.cookies.clear(domain)
+    cookies = session.cookies.get_dict()
+    return cookies
