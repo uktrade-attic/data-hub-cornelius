@@ -70,7 +70,9 @@ class OdataSpider(scrapy.Spider):
             try:
                 data = json.loads(response.body.decode("utf-8"))
             except Exception:
-                logger.error(response.body)
+                logger.exception('Error parsing response as '
+                                 'JSON.\nResponse body: \n%s',
+                                 response.body)
                 raise
             # yield data
             items = data['d']['EntitySets']
