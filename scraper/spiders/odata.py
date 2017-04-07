@@ -19,7 +19,7 @@ def _get_cookie_domain(url):
     return parent_sub_domain
 
 
-def get_cookies():
+def _get_cookies():
     login_url = "{}/?whr={}".format(
         settings.CDMS_BASE_URL,
         settings.CDMS_ADFS_URL)
@@ -37,6 +37,7 @@ def get_cookies():
 
 
 class OdataSpider(scrapy.Spider):
+    """A Scrapy spider for OData v1 services."""
     name = 'odata'
     allowed_domains = settings.ALLOWED_DOMAINS
     start_urls = settings.START_URLS
@@ -53,6 +54,10 @@ class OdataSpider(scrapy.Spider):
                 db=settings.REDIS_DB)
 
     def start_requests(self):
+        """Queues the initial request(s) in the scraping job. Typically this 
+        queues a request for the service root URL that returns a list of 
+        entity types.
+        """
         self._refresh_cookies()
         self._queue_previous_urls()
 
@@ -61,6 +66,9 @@ class OdataSpider(scrapy.Spider):
             yield self._make_request(url, callback=self.parse_homepage)
 
     def parse_homepage(self, response):
+        """Parses a response for a service root URL, and queues requests 
+        for each entity collection specified in the response.
+        """
         if response.url.strip("/").endswith(".svc"):
             try:
                 data = json.loads(response.body.decode("utf-8"))
@@ -75,6 +83,9 @@ class OdataSpider(scrapy.Spider):
                 yield self._make_request(url, callback=self.parse_itempage)
 
     def parse_itempage(self, response):
+        """Parses a response for an entity collection endpoint, and queues 
+        a request for the next page (if there is one).
+        """
         logger.info('%d response received for URL: %s', response.status,
                     response.request.url)
         self._remove_url_from_cache(response.url)
@@ -88,26 +99,38 @@ class OdataSpider(scrapy.Spider):
             yield self._make_request(url, callback=self.parse_itempage)
 
     def _queue_previous_urls(self):
+        """Queues incomplete URLs from previous runs (if the cache 
+        server is enabled).
+        """
         for url in self._previous_urls():
             url = url.decode("utf-8")
             logger.info('Queuing URL from redis: %s', url)
             yield self._make_request(url, callback=self.parse_itempage)
 
     def _previous_urls(self):
+        """Returns incomplete URLs from the cache server (if enabled)."""
         return self.cache.sscan_iter('urls') if self.cache else ()
 
     def _add_url_to_cache(self, url):
+        """Stores a URL in the cache server (if enabled)."""
         if self.cache:
             self.cache.sadd('urls', url)
 
     def _remove_url_from_cache(self, url):
+        """Removes a URL from the cache server (if enabled)."""
         if self.cache:
             self.cache.srem('urls', url)
 
     def _refresh_cookies(self):
-        self.cookies = get_cookies()
+        """Creates a new session with the OData service."""
+        self.cookies = _get_cookies()
 
     def _make_request(self, url, callback):
+        """Creates a Scrapy request object, using the cookies for the 
+        current session, disabling redirects and specifying an error callback.
+        
+        Note that this does not actually queue the request.        
+        """
         return scrapy.Request(
             url, callback=callback, cookies=self.cookies,
             errback=self._handle_error,
@@ -116,6 +139,7 @@ class OdataSpider(scrapy.Spider):
             })
 
     def _retry(self, response):
+        """Retries a failed request (up to a configured number of attempts)."""
         num_retries = response.request.meta.get('retry_times', 0) + 1
         if num_retries >= 5:
             logger.error('Max attempts exceeded for URL: %s',
@@ -131,9 +155,18 @@ class OdataSpider(scrapy.Spider):
         return new_request
 
     def _handle_error(self, failure):
+        """Handles Scrapy request errors.
+        
+        This function is passed as the error callback when making Scrapy 
+        requests.
+        """
         response = getattr(failure.value, 'response')
         if response and response.status == 302:
+            # This is typically due to session expiry.
             yield self._retry(response)
         else:
+            # Log the response status code, URL and traceback, and then
+            # carries on.
+            # Often these are 403s.
             logger.error('Scrapy error\nResponse\n%s:Traceback:\n%s',
                          response, failure.getTraceback())

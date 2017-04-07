@@ -48,5 +48,5 @@ def test_get_cookie_domain():
 @unittest.mock.patch("scraper.spiders.odata.auth.login", mock_login)
 def test_get_cookies():
     expected = [".flam.example.com"]
-    result = odata.get_cookies()
+    result = odata._get_cookies()
     assert result == expected, (result, expected)
