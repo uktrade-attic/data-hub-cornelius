@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-
+import logging
 import os
 import urllib
 
@@ -81,6 +80,8 @@ HTTPCACHE_STORAGE = 'scraper.storage.S3CacheStorage'
 HTTPCACHE_GZIP = False
 COMPRESSION_ENABLED = False
 
+LOG_LEVEL = logging.INFO
+LOG_ENABLED = True
 S3CACHE_BUCKET = os.environ['S3CACHE_BUCKET']
 AWS_REGION = os.environ['AWS_REGION']
 
@@ -89,18 +90,12 @@ CDMS_ADFS_URL = os.environ['CDMS_ADFS_URL']
 CDMS_USERNAME = os.environ['CDMS_USERNAME']
 CDMS_PASSWORD = os.environ['CDMS_PASSWORD']
 
+REDIS_ENABLED = False
 REDIS_HOST = os.environ['REDIS_HOST']
 REDIS_PORT = os.environ['REDIS_PORT']
 REDIS_DB = os.environ['REDIS_DB']
 
 RETRY_ENABLED = True
-
-SCRAPE_ENTITIES = frozenset([
-    "optevia_servicedeliverySet",
-    "optevia_servicedeliverystatusSet",
-    "optevia_serviceofferSet",
-    "optevia_serviceoffercountrySet",
-    "optevia_eventSet"])
 
 START_URLS = ["{}/XRMServices/2011/OrganizationData.svc/".format(CDMS_BASE_URL)]
 ALLOWED_DOMAINS = [urllib.parse.urlparse(CDMS_BASE_URL).netloc]

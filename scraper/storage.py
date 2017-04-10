@@ -1,18 +1,19 @@
-# -*- coding: utf-8 -*-
-
+import functools
 import io
+import logging
 import pickle
 from time import time
-import functools
 
-from w3lib.http import headers_raw_to_dict, headers_dict_to_raw
+import boto3
+import botocore
 
 from scrapy.http import Headers
 from scrapy.responsetypes import responsetypes
 from scrapy.utils.request import request_fingerprint
 
-import boto3
-import botocore
+from w3lib.http import headers_dict_to_raw, headers_raw_to_dict
+
+logger = logging.getLogger(__name__)
 
 cache_key_prefix = "CACHE"
 
@@ -25,20 +26,22 @@ filenames = [
     'response_body']
 
 
-def make_delete_objects(path_func):
+def _make_delete_objects(path_func):
     return {'Objects': [{'Key': path_func(k)} for k in filenames]}
 
 
-def listify(*args):
+def _listify(*args):
     """
+    Returns a list containing the arguments this function is called with.
+
     >>> l = [1, 2, 3, ]
-    >>> listify('a', 'b', *l)
+    >>> _listify('a', 'b', *l)
     ['a', 'b', 1, 2, 3]
     """
     return list(args)
 
 
-def get_s3_text(bucket, key):
+def _get_s3_text(bucket, key):
     body = io.BytesIO()
     bucket.download_fileobj(key, body)
     body.seek(0)
@@ -46,14 +49,17 @@ def get_s3_text(bucket, key):
     return text
 
 
-def send_s3_text(bucket, key, body):
+def _send_s3_text(bucket, key, body):
     body = io.BytesIO(body)
     bucket.upload_fileobj(body, key)
     body.close()
 
 
-class S3CacheStorage(object):
+class S3CacheStorage:
+    """Scrapy HTTP cache class that caches responses in S3."""
+
     def __init__(self, settings):
+        """Initialises the S3 scraper."""
         self.bucket_name = settings['S3CACHE_BUCKET']
         assert self.bucket_name, "No bucket configured"
         self.region = settings['AWS_REGION']
@@ -62,22 +68,27 @@ class S3CacheStorage(object):
         self.bucket = s3.Bucket(self.bucket_name)
 
     def open_spider(self, spider):
+        """Called by Scrapy when the spider is opened."""
         pass
 
     def close_spider(self, spider):
+        """Called by Scrapy when the spider is closed."""
         pass
 
     def retrieve_response(self, spider, request):
-        path = functools.partial(storage_path, request)
+        """Retrieves a response from S3 (if previously cached)."""
+        path = functools.partial(_storage_path, request)
         try:
-            _metadata = get_s3_text(self.bucket, path('pickled_meta'))
-            body = get_s3_text(self.bucket, path('response_body'))
-            rawheaders = get_s3_text(self.bucket, path('response_headers'))
+            _metadata = _get_s3_text(self.bucket, path('pickled_meta'))
+            body = _get_s3_text(self.bucket, path('response_body'))
+            rawheaders = _get_s3_text(self.bucket, path('response_headers'))
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == "404":
                 return None
             else:
                 raise
+
+        logging.info('Retrieved response from cache for URL: %s', request.url)
 
         metadata = pickle.loads(_metadata)
 
@@ -87,14 +98,15 @@ class S3CacheStorage(object):
         respcls = responsetypes.from_args(headers=headers, url=url)
         response = respcls(url=url, headers=headers, status=status, body=body)
         if response.status == 302:
-            self.bucket.delete_objects(Delete=make_delete_objects(path))
+            self.bucket.delete_objects(Delete=_make_delete_objects(path))
             return None
         return response
 
     def store_response(self, spider, request, response):
+        """Stores a response in S3."""
         if response.status == 302:
             return
-        path = functools.partial(storage_path, request)
+        path = functools.partial(_storage_path, request)
         metadata = {
             'url': request.url,
             'method': request.method,
@@ -112,17 +124,17 @@ class S3CacheStorage(object):
             ('response_body', response.body),
         )
         for key, body in pairs:
-            send_s3_text(self.bucket, path(key), body)
+            _send_s3_text(self.bucket, path(key), body)
 
 
-def storage_path(request, *args):
+def _storage_path(request, *args):
     fingerprint = request_fingerprint(request)
-    path = "/".join(listify(cache_key_prefix, get_path(request.url), fingerprint, *args))
+    path = "/".join(_listify(cache_key_prefix, _get_path(request.url), fingerprint, *args))
     path = path.replace("//", "/")
     return path
 
 
-def get_path(url):
+def _get_path(url):
     without_protocol = url.split("//", 1)[-1]
     without_domain = without_protocol.split("/", 1)[-1]
     return without_domain

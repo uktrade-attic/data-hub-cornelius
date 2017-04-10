@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import logging
 
 import requests
@@ -8,20 +6,15 @@ from pyquery import PyQuery
 
 logger = logging.getLogger('cmds_api')
 
-default_headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-
-
-def dictify(*args, **kwargs):
-    result = {}
-    for item in args:
-        if item:
-            result.update(item)
-    result.update(kwargs)
-    return result
+default_headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+}
 
 
 def login(url, username, password, user_agent=None):
-    """
+    """Logs in to the OData service.
+
     This goes through the following steps:
 
     1. get login page
@@ -48,7 +41,7 @@ def login(url, username, password, user_agent=None):
     password_field_name = html_parser('input[name*="Password"]').attr('name')
 
     # 2. submit the login form with username and password
-    resp = submit_form(
+    resp = _submit_form(
         session, resp.content,
         url=resp.url,
         params={
@@ -57,16 +50,17 @@ def login(url, username, password, user_agent=None):
 
     # 3. and 4. re-submit the resulting form containing the security token
     # so that the next STS can validate it
-    resp = submit_form(session, resp.content)
+    resp = _submit_form(session, resp.content)
 
     # 5. re-submit the form again to validate the token and get as result
     # the authenticated cookie
-    submit_form(session, resp.content)
+    _submit_form(session, resp.content)
     return session
 
 
-def submit_form(session, source, url=None, params={}):
-    """
+def _submit_form(session, source, url=None, params=None):
+    """Submits an HTML form.
+
     It submits the form contained in the `source` param optionally
     overriding form `params` and form `url`.
 
@@ -82,7 +76,8 @@ def submit_form(session, source, url=None, params={}):
         field.get('name'): field.get('value')
         for field in html_parser('input')
     }
-    data.update(params)
+    if params:
+        data.update(params)
 
     url = url or form_action
     resp = session.post(url, data)
