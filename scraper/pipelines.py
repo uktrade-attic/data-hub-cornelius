@@ -5,5 +5,8 @@
 
 
 class ScraperPipeline:
+    """Example scraper pipeline class."""
+
     def process_item(self, item, spider):
+        """Callback method to process an item."""
         return item

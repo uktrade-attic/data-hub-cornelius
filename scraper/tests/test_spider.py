@@ -13,30 +13,40 @@ MOCK_SETTINGS = {
 
 
 class MockCookies:
+    """Mock (requests) cookies object."""
+
     def __init__(self):
+        """Initialises the cookies object with mock data."""
         self.domains = [
             ".flam.example.com",
             ".blap.example.com"]
 
     def list_domains(self):
+        """Returns held cookie domains."""
         return self.domains
 
     def clear(self, domain):
+        """Clears cookies for a domain."""
         self.domains.remove(domain)
 
     def get_dict(self):
+        """Returns the mock cookies."""
         return self.domains
 
 
 class MockSession:
+    """Mock requests session."""
+
     cookies = MockCookies()
 
 
 def mock_login(*args, **kwargs):
+    """Mock login function."""
     return MockSession()
 
 
 def test_get_cookie_domain():
+    """Tests that the correct cookie domain is extracted."""
     data = "http://flim.flam.example.com"
     expected = ".flam.example.com"
     result = odata._get_cookie_domain(data)
@@ -45,6 +55,7 @@ def test_get_cookie_domain():
 
 @patch("scraper.spiders.odata.auth.login", mock_login)
 def test_get_cookies():
+    """Tests that the correct cookies are extracted."""
     expected = [".flam.example.com"]
     result = odata._get_cookies(MOCK_SETTINGS)
     assert result == expected, (result, expected)

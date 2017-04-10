@@ -23,12 +23,17 @@ mock_settings = {
 
 
 def mock_get_s3_text(bucket, fingerprint):
+    """Mock version of _get_s3_text().
+
+    Returns mock data data.
+    """
     return mock_data[fingerprint]
 
 
 @mock.patch("scraper.storage.boto3")
-@mock.patch("scraper.storage.get_s3_text", mock_get_s3_text)
+@mock.patch("scraper.storage._get_s3_text", mock_get_s3_text)
 def test_retrieve_response(mock_boto3):
+    """Tests that data is correctly cached in S3."""
     s3_cache_storage = S3CacheStorage(mock_settings)
     mock_bucket = mock_boto3.resource('s3').Bucket(mock_settings['S3CACHE_BUCKET'])
     assert s3_cache_storage.bucket == mock_bucket
@@ -42,8 +47,9 @@ def test_retrieve_response(mock_boto3):
 
 @freezegun.freeze_time("2017-02-14 13:00")
 @mock.patch("scraper.storage.boto3")
-@mock.patch("scraper.storage.send_s3_text")
+@mock.patch("scraper.storage._send_s3_text")
 def test_store_response(mock_send_s3_text, mock_boto3):
+    """Tests that data is retrieved from the cache."""
     s3_cache_storage = S3CacheStorage(mock_settings)
     mock_bucket = mock_boto3.resource('s3').Bucket(mock_settings['S3CACHE_BUCKET'])
     assert s3_cache_storage.bucket == mock_bucket
